@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF8EE" />
+      <stop offset="55%" stop-color="#FCE5D2" />
+      <stop offset="100%" stop-color="#F7CEB4" />
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="35%" cy="28%" r="65%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="melonGrad" cx="34%" cy="30%" r="68%">
+      <stop offset="0%" stop-color="#6EE787" />
+      <stop offset="60%" stop-color="#16A34A" />
+      <stop offset="100%" stop-color="#14532D" />
+    </radialGradient>
+    <radialGradient id="cherryGrad" cx="34%" cy="30%" r="68%">
+      <stop offset="0%" stop-color="#FF7B8E" />
+      <stop offset="62%" stop-color="#E11D48" />
+      <stop offset="100%" stop-color="#881337" />
+    </radialGradient>
+    <clipPath id="melonClip">
+      <circle cx="222" cy="272" r="134" />
+    </clipPath>
+  </defs>
+
+  <!-- Warm Pastel Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <circle cx="190" cy="170" r="240" fill="url(#sunGlow)" />
+
+  <!-- Ground Soft Shadow -->
+  <ellipse cx="260" cy="408" rx="164" ry="26" fill="#7A4428" opacity="0.16" />
+
+  <!-- Kawaii Watermelon -->
+  <g>
+    <circle cx="222" cy="272" r="134" fill="url(#melonGrad)" />
+    <g clip-path="url(#melonClip)" stroke="#064E3B" stroke-width="15" stroke-linecap="round" fill="none" opacity="0.54">
+      <path d="M144 138 Q122 272 146 406" />
+      <path d="M196 130 Q186 272 198 412" />
+      <path d="M248 130 Q258 272 246 412" />
+      <path d="M300 138 Q322 272 298 406" />
+    </g>
+    <circle cx="222" cy="272" r="134" fill="none" stroke="#1A2E05" stroke-opacity="0.18" stroke-width="4" />
+
+    <!-- Specular Highlights -->
+    <ellipse cx="168" cy="210" rx="34" ry="18" transform="rotate(-34 168 210)" fill="#FFFFFF" opacity="0.38" />
+    <circle cx="144" cy="242" r="8" fill="#FFFFFF" opacity="0.3" />
+
+    <!-- Watermelon Kawaii Face -->
+    <ellipse cx="174" cy="296" rx="16" ry="9" fill="#FDA4AF" opacity="0.72" />
+    <ellipse cx="270" cy="296" rx="16" ry="9" fill="#FDA4AF" opacity="0.72" />
+    <circle cx="188" cy="276" r="10.5" fill="#1A120B" />
+    <circle cx="256" cy="276" r="10.5" fill="#1A120B" />
+    <circle cx="184.5" cy="272.5" r="3.6" fill="#FFFFFF" />
+    <circle cx="252.5" cy="272.5" r="3.6" fill="#FFFFFF" />
+    <path d="M206 293 Q222 312 238 293" stroke="#1A120B" stroke-width="7.5" stroke-linecap="round" fill="none" />
+  </g>
+
+  <!-- Kawaii Cherry -->
+  <g>
+    <!-- Cherry Stem & Leaf -->
+    <path d="M352 268 Q364 196 406 168" stroke="#6B4226" stroke-width="11" stroke-linecap="round" fill="none" />
+    <ellipse cx="388" cy="212" rx="30" ry="15" transform="rotate(-24 388 212)" fill="#40916C" />
+    <path d="M366 221 Q388 212 410 203" stroke="#2D6A4F" stroke-width="3" stroke-linecap="round" fill="none" />
+
+    <!-- Cherry Body -->
+    <circle cx="352" cy="334" r="70" fill="url(#cherryGrad)" />
+    <circle cx="352" cy="334" r="70" fill="none" stroke="#3B2317" stroke-opacity="0.18" stroke-width="3.5" />
+
+    <!-- Specular Highlights -->
+    <ellipse cx="326" cy="304" rx="18" ry="10" transform="rotate(-34 326 304)" fill="#FFFFFF" opacity="0.46" />
+    <circle cx="312" cy="322" r="4.5" fill="#FFFFFF" opacity="0.34" />
+
+    <!-- Cherry Kawaii Face -->
+    <ellipse cx="324" cy="346" rx="9" ry="5.2" fill="#FFB3C1" opacity="0.72" />
+    <ellipse cx="380" cy="346" rx="9" ry="5.2" fill="#FFB3C1" opacity="0.72" />
+    <circle cx="333" cy="336" r="6" fill="#2D1A10" />
+    <circle cx="371" cy="336" r="6" fill="#2D1A10" />
+    <circle cx="331" cy="334" r="2.1" fill="#FFFFFF" />
+    <circle cx="369" cy="334" r="2.1" fill="#FFFFFF" />
+    <path d="M342 346 Q352 356 362 346" stroke="#2D1A10" stroke-width="4.5" stroke-linecap="round" fill="none" />
+  </g>
+</svg>

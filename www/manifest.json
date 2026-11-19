@@ -1,0 +1,19 @@
+{
+  "name": "Fruit Merge",
+  "short_name": "Fruit Merge",
+  "description": "Drop, stack, and merge 10 tiers of kawaii fruits in this cozy offline physics puzzle game.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFF5E4",
+  "theme_color": "#FFF5E4",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
