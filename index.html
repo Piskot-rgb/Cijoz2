@@ -1,0 +1,2369 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Fruit Merge</title>
+    <meta name="description" content="A cozy Suika-style 2D physics puzzle game where you drop and merge 10 tiers of kawaii fruits inside a glass container." />
+    <meta property="og:title" content="Fruit Merge" />
+    <meta property="og:description" content="Drop, stack, and merge 10 tiers of glossy kawaii fruits in this cozy physics puzzle game." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      :root {
+        --bg-cream: #fff8f0;
+        --bg-peach: #fbe5d6;
+        --bg-apricot: #f5d3be;
+        --surface: rgba(255, 252, 247, 0.88);
+        --surface-strong: #fffcf7;
+        --border-warm: rgba(138, 90, 62, 0.16);
+        --ink: #3b2317;
+        --ink-soft: #755342;
+        --accent: #e5593c;
+        --accent-hover: #cf482c;
+        --accent-soft: rgba(229, 89, 60, 0.12);
+        --danger: #e11d48;
+        --shadow-warm: 0 14px 36px -12px rgba(96, 52, 28, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html,
+      body,
+      canvas {
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        overscroll-behavior: none;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', 'Quicksand', 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 16% 18%, rgba(255, 214, 178, 0.55) 0%, transparent 44%),
+          radial-gradient(circle at 86% 82%, rgba(252, 198, 175, 0.5) 0%, transparent 46%),
+          linear-gradient(160deg, var(--bg-cream) 0%, var(--bg-peach) 56%, var(--bg-apricot) 100%);
+      }
+
+      .app-shell {
+        position: relative;
+        width: 100%;
+        height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding:
+          calc(14px + env(safe-area-inset-top, 0px))
+          calc(14px + env(safe-area-inset-right, 0px))
+          calc(14px + env(safe-area-inset-bottom, 0px))
+          calc(14px + env(safe-area-inset-left, 0px));
+        gap: 24px;
+      }
+
+      /* Side / HUD Panels */
+      .side-col {
+        width: 210px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border-warm);
+        border-radius: 20px;
+        padding: 16px 18px;
+        box-shadow: var(--shadow-warm);
+      }
+
+      .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-title {
+        margin: 0;
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+        color: var(--ink);
+      }
+
+      .brand-sub {
+        margin: 4px 0 0;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+      }
+
+      .stat-block {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .stat-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .stat-label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+      }
+
+      .stat-value {
+        font-size: 1.55rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+      }
+
+      .stat-value.best {
+        font-size: 1.2rem;
+        color: var(--accent);
+      }
+
+      .divider {
+        height: 1px;
+        background: var(--border-warm);
+        margin: 2px 0;
+      }
+
+      .next-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .next-header {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+      }
+
+      .next-name {
+        color: var(--ink);
+        font-weight: 800;
+      }
+
+      .next-circle {
+        width: 92px;
+        height: 92px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #ffffff 0%, #fff4ea 70%, #f9e4d4 100%);
+        border: 1px solid var(--border-warm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 2px 8px rgba(138, 90, 62, 0.08);
+      }
+
+      .evolution-title {
+        margin: 0 0 10px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+      }
+
+      .evo-canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .controls-row {
+        display: flex;
+        gap: 10px;
+      }
+
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        outline: none;
+        transition: transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.14s ease, opacity 0.14s ease;
+      }
+
+      button:focus-visible {
+        box-shadow: 0 0 0 3px rgba(229, 89, 60, 0.35);
+      }
+
+      button:active {
+        transform: scale(0.97);
+      }
+
+      .btn-icon {
+        flex: 1;
+        min-height: 44px;
+        padding: 8px 12px;
+        border-radius: 14px;
+        background: var(--surface-strong);
+        border: 1px solid var(--border-warm);
+        color: var(--ink);
+        font-size: 0.84rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+
+      .btn-icon:hover {
+        background: #fff4eb;
+      }
+
+      .btn-primary {
+        min-height: 46px;
+        padding: 12px 28px;
+        border-radius: 14px;
+        background: var(--accent);
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        box-shadow: 0 8px 20px -6px rgba(229, 89, 60, 0.55);
+        white-space: nowrap;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+      }
+
+      /* Center Game Stage */
+      .stage-col {
+        position: relative;
+        height: 100%;
+        max-height: 760px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      /* Mobile top HUD (hidden on desktop) */
+      .mobile-hud {
+        display: none;
+        width: 100%;
+        max-width: 440px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 12px;
+        background: var(--surface);
+        border: 1px solid var(--border-warm);
+        border-radius: 16px;
+        box-shadow: var(--shadow-warm);
+        flex-shrink: 0;
+      }
+
+      .mobile-scores {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+      }
+
+      .mobile-stat {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .mobile-stat span:first-child {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+      }
+
+      .mobile-stat span:last-child {
+        font-size: 1.15rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+      }
+
+      .mobile-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .mobile-next {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-right: 4px;
+      }
+
+      .mobile-next-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+      }
+
+      .mobile-next-circle {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #fff6ed;
+        border: 1px solid var(--border-warm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn-compact {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: var(--surface-strong);
+        border: 1px solid var(--border-warm);
+        color: var(--ink);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+
+      .canvas-frame {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+      }
+
+      #gameCanvas {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+        touch-action: none;
+        cursor: crosshair;
+      }
+
+      /* Overlays (Title & Game Over) */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(59, 35, 23, 0.28);
+        z-index: 20;
+        opacity: 1;
+        transition: opacity 0.2s ease;
+      }
+
+      .overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .modal-card {
+        width: 100%;
+        max-width: 380px;
+        background: var(--surface-strong);
+        border: 1px solid rgba(138, 90, 62, 0.22);
+        border-radius: 26px;
+        padding: 28px 26px 24px;
+        text-align: center;
+        box-shadow: 0 24px 60px -16px rgba(59, 35, 23, 0.34);
+        transform: translateY(0) scale(1);
+        transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .overlay.hidden .modal-card {
+        transform: translateY(10px) scale(0.96);
+      }
+
+      .modal-title-svg {
+        display: block;
+        margin: 0 auto 10px;
+      }
+
+      .modal-heading {
+        margin: 0 0 6px;
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+      }
+
+      .modal-copy {
+        margin: 0 0 20px;
+        font-size: 0.94rem;
+        line-height: 1.5;
+        color: var(--ink-soft);
+      }
+
+      .final-scores {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding: 14px;
+        border-radius: 16px;
+        background: #fdf3ea;
+        border: 1px solid var(--border-warm);
+      }
+
+      .final-stat-label {
+        display: block;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+        margin-bottom: 4px;
+      }
+
+      .final-stat-num {
+        display: block;
+        font-size: 1.65rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        color: var(--ink);
+      }
+
+      .final-stat-num.accent {
+        color: var(--accent);
+      }
+
+      .new-best-note {
+        margin: -8px 0 16px;
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      .new-best-note.hidden {
+        display: none;
+      }
+
+      .control-hint {
+        margin: 14px 0 0;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+        line-height: 1.4;
+      }
+
+      .hint-footer {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      @media (max-height: 600px) {
+        .evo-panel {
+          display: none;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .app-shell {
+          padding:
+            calc(10px + env(safe-area-inset-top, 0px))
+            calc(10px + env(safe-area-inset-right, 0px))
+            calc(12px + env(safe-area-inset-bottom, 0px))
+            calc(10px + env(safe-area-inset-left, 0px));
+          gap: 0;
+        }
+
+        .side-col {
+          display: none;
+        }
+
+        .mobile-hud {
+          display: flex;
+        }
+
+        .stage-col {
+          width: 100%;
+          max-height: 100%;
+          gap: 8px;
+        }
+
+        .hint-footer {
+          display: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <!-- Left Column (Desktop) -->
+      <aside class="side-col" aria-label="Score and Progression">
+        <div class="panel">
+          <div class="brand-lockup">
+            <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+              <circle cx="18" cy="20" r="13" fill="#ff5a5f" />
+              <circle cx="13.5" cy="15.5" r="3.5" fill="rgba(255,255,255,0.45)" />
+              <path d="M18 7 C18 3.5, 22 2, 24 3" stroke="#6b4226" stroke-width="2.4" stroke-linecap="round" fill="none" />
+              <ellipse cx="22.5" cy="6.5" rx="4.2" ry="2.2" transform="rotate(-20 22.5 6.5)" fill="#52b788" />
+              <circle cx="14.5" cy="20" r="1.4" fill="#3b2317" />
+              <circle cx="21.5" cy="20" r="1.4" fill="#3b2317" />
+              <path d="M16 22.5 Q18 24.5 20 22.5" stroke="#3b2317" stroke-width="1.5" stroke-linecap="round" fill="none" />
+            </svg>
+            <div>
+              <h1 class="brand-title">Fruit Merge</h1>
+              <p class="brand-sub">Drop, stack &amp; combine</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel stat-block">
+          <div class="stat-row">
+            <span class="stat-label">Score</span>
+            <span class="stat-value" id="scoreVal">0</span>
+          </div>
+          <div class="divider"></div>
+          <div class="stat-row">
+            <span class="stat-label">Best</span>
+            <span class="stat-value best" id="bestVal">0</span>
+          </div>
+        </div>
+
+        <div class="panel evo-panel">
+          <p class="evolution-title">Fruit Evolution</p>
+          <canvas id="evoCanvas" class="evo-canvas" width="196" height="218" aria-label="Fruit tier progression from Cherry to Watermelon"></canvas>
+        </div>
+      </aside>
+
+      <!-- Center Game Stage -->
+      <section class="stage-col" aria-label="Game Arena">
+        <!-- Mobile Top HUD -->
+        <div class="mobile-hud">
+          <div class="mobile-scores">
+            <div class="mobile-stat">
+              <span>Score</span>
+              <span id="mobileScoreVal">0</span>
+            </div>
+            <div class="mobile-stat">
+              <span>Best</span>
+              <span id="mobileBestVal">0</span>
+            </div>
+          </div>
+
+          <div class="mobile-right">
+            <div class="mobile-next">
+              <span class="mobile-next-label">Next</span>
+              <div class="mobile-next-circle">
+                <canvas id="mobileNextCanvas" width="34" height="34" aria-label="Next fruit preview"></canvas>
+              </div>
+            </div>
+            <button type="button" class="btn-compact" id="mobileMuteBtn" aria-label="Toggle sound"></button>
+            <button type="button" class="btn-compact" id="mobileRestartBtn" aria-label="Restart game">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="canvas-frame" id="canvasFrame">
+          <canvas id="gameCanvas" width="460" height="680" aria-label="Fruit Merge playfield"></canvas>
+        </div>
+
+        <div class="hint-footer">Move mouse or drag to aim · Click or release to drop · Arrows &amp; Space supported</div>
+      </section>
+
+      <!-- Right Column (Desktop) -->
+      <aside class="side-col" aria-label="Next Fruit and Controls">
+        <div class="panel next-wrap">
+          <div class="next-header">
+            <span>Next Fruit</span>
+            <span class="next-name" id="nextName">Cherry</span>
+          </div>
+          <div class="next-circle">
+            <canvas id="nextCanvas" width="76" height="76" aria-label="Next fruit preview"></canvas>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="controls-row">
+            <button type="button" class="btn-icon" id="muteBtn" aria-label="Toggle sound">
+              <span id="muteIconSlot"></span>
+              <span id="muteLabel">Sound On</span>
+            </button>
+          </div>
+          <div class="controls-row" style="margin-top: 10px;">
+            <button type="button" class="btn-icon" id="restartBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              <span>Restart</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Title Screen Overlay -->
+    <div class="overlay" id="titleOverlay" role="dialog" aria-modal="true" aria-labelledby="titleHeading">
+      <div class="modal-card">
+        <svg class="modal-title-svg" width="128" height="76" viewBox="0 0 128 76" aria-hidden="true">
+          <!-- Cute trio of fruits lockup -->
+          <circle cx="36" cy="48" r="18" fill="#a855f7" />
+          <circle cx="30" cy="42" r="5" fill="rgba(255,255,255,0.35)" />
+          <circle cx="32" cy="48" r="1.7" fill="#3b2317" />
+          <circle cx="40" cy="48" r="1.7" fill="#3b2317" />
+          <path d="M34 51.5 Q36 53.5 38 51.5" stroke="#3b2317" stroke-width="1.6" stroke-linecap="round" fill="none" />
+
+          <circle cx="92" cy="46" r="20" fill="#fb923c" />
+          <circle cx="85" cy="39" r="5.5" fill="rgba(255,255,255,0.35)" />
+          <ellipse cx="95" cy="25" rx="5.5" ry="2.8" transform="rotate(-25 95 25)" fill="#4ade80" />
+          <circle cx="87.5" cy="46" r="1.8" fill="#3b2317" />
+          <circle cx="96.5" cy="46" r="1.8" fill="#3b2317" />
+          <path d="M90 49.5 Q92 52 94 49.5" stroke="#3b2317" stroke-width="1.6" stroke-linecap="round" fill="none" />
+
+          <circle cx="64" cy="44" r="25" fill="#4d7c0f" />
+          <path d="M51 23 Q48 44 52 65" stroke="#1a2e05" stroke-width="3.2" stroke-linecap="round" fill="none" opacity="0.45" />
+          <path d="M64 19 Q64 44 64 69" stroke="#1a2e05" stroke-width="3.2" stroke-linecap="round" fill="none" opacity="0.45" />
+          <path d="M77 23 Q80 44 76 65" stroke="#1a2e05" stroke-width="3.2" stroke-linecap="round" fill="none" opacity="0.45" />
+          <circle cx="55" cy="34" r="6" fill="rgba(255,255,255,0.28)" />
+          <circle cx="58.5" cy="44" r="2.2" fill="#1a120b" />
+          <circle cx="69.5" cy="44" r="2.2" fill="#1a120b" />
+          <ellipse cx="54.5" cy="47.5" rx="3" ry="1.6" fill="#fda4af" opacity="0.7" />
+          <ellipse cx="73.5" cy="47.5" rx="3" ry="1.6" fill="#fda4af" opacity="0.7" />
+          <path d="M61 48.5 Q64 51.5 67 48.5" stroke="#1a120b" stroke-width="1.8" stroke-linecap="round" fill="none" />
+        </svg>
+        <h2 class="modal-heading" id="titleHeading">Fruit Merge</h2>
+        <p class="modal-copy">
+          Drop matching fruits so they fuse into bigger tiers all the way up to the giant Watermelon. Don't let the stack stay above the red Danger Line!
+        </p>
+        <button type="button" class="btn-primary" id="startBtn">Start Game</button>
+        <p class="control-hint">Move or drag to aim · Click or release to drop</p>
+      </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="overlay hidden" id="gameOverOverlay" role="dialog" aria-modal="true" aria-labelledby="gameOverHeading">
+      <div class="modal-card">
+        <h2 class="modal-heading" id="gameOverHeading">Box Overflowed!</h2>
+        <p class="modal-copy">A fruit stayed above the Danger Line for too long.</p>
+        <div class="final-scores">
+          <div>
+            <span class="final-stat-label">Final Score</span>
+            <span class="final-stat-num" id="finalScoreVal">0</span>
+          </div>
+          <div>
+            <span class="final-stat-label">Best Score</span>
+            <span class="final-stat-num accent" id="finalBestVal">0</span>
+          </div>
+        </div>
+        <p class="new-best-note hidden" id="newBestNote">New Personal Best!</p>
+        <button type="button" class="btn-primary" id="playAgainBtn">Play Again</button>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        'use strict';
+
+        // ============================================================
+        // 1. Constants & Fruit Definitions (10 Tiers)
+        // ============================================================
+        const LOGICAL_W = 460;
+        const LOGICAL_H = 680;
+        const BOX_LEFT = 20;
+        const BOX_RIGHT = 440;
+        const BOX_TOP = 94;
+        const BOX_BOTTOM = 660;
+        const BOX_WIDTH = BOX_RIGHT - BOX_LEFT; // 420
+        const DANGER_Y = 152;
+        const DROP_Y = 48;
+
+        const GRAVITY = 1380;
+        const RESTITUTION = 0.15;
+        const COULOMB_MU = 0.34;
+        const SUBSTEPS = 10;
+        const MAX_FRAME_DT = 0.033;
+        const DROP_COOLDOWN = 0.5;
+        const DANGER_LIMIT = 2.0;
+        const WATERMELON_BONUS = 200;
+
+        const STORAGE_BEST_KEY = 'fruit_merge_best_score_v1';
+        const STORAGE_MUTE_KEY = 'fruit_merge_muted_v1';
+
+        function safeStorageGet(key, fallback) {
+          try {
+            const val = window.localStorage.getItem(key);
+            return val !== null ? val : fallback;
+          } catch (e) {
+            return fallback;
+          }
+        }
+
+        function safeStorageSet(key, val) {
+          try {
+            window.localStorage.setItem(key, String(val));
+          } catch (e) {}
+        }
+
+        const FRUITS = [
+          {
+            tier: 0,
+            name: 'Cherry',
+            radius: 15,
+            points: 2,
+            c1: '#ff6b7a',
+            c2: '#d91e36',
+            c3: '#9e0b22',
+            particle: '#ff4d6d',
+            cheek: '#ffb3c1',
+          },
+          {
+            tier: 1,
+            name: 'Strawberry',
+            radius: 21,
+            points: 4,
+            c1: '#ff758f',
+            c2: '#f43f5e',
+            c3: '#be123c',
+            particle: '#fb7185',
+            cheek: '#fecdd3',
+          },
+          {
+            tier: 2,
+            name: 'Grape',
+            radius: 28,
+            points: 6,
+            c1: '#c084fc',
+            c2: '#9333ea',
+            c3: '#6b21a8',
+            particle: '#a855f7',
+            cheek: '#f5d0fe',
+          },
+          {
+            tier: 3,
+            name: 'Tangerine',
+            radius: 35,
+            points: 10,
+            c1: '#fdba74',
+            c2: '#f97316',
+            c3: '#c2410c',
+            particle: '#fb923c',
+            cheek: '#fed7aa',
+          },
+          {
+            tier: 4,
+            name: 'Apple',
+            radius: 44,
+            points: 15,
+            c1: '#ff6b5b',
+            c2: '#ef233c',
+            c3: '#a4133c',
+            particle: '#ef4444',
+            cheek: '#ffc2c7',
+          },
+          {
+            tier: 5,
+            name: 'Pear',
+            radius: 53,
+            points: 21,
+            c1: '#e9f57a',
+            c2: '#aacc00',
+            c3: '#709700',
+            particle: '#bef264',
+            cheek: '#f9b4ab',
+          },
+          {
+            tier: 6,
+            name: 'Peach',
+            radius: 63,
+            points: 28,
+            c1: '#ffd6c4',
+            c2: '#ff8fa3',
+            c3: '#e05780',
+            particle: '#fda4af',
+            cheek: '#ff5d8f',
+          },
+          {
+            tier: 7,
+            name: 'Pineapple',
+            radius: 74,
+            points: 36,
+            c1: '#fde047',
+            c2: '#eab308',
+            c3: '#b45309',
+            particle: '#facc15',
+            cheek: '#fca5a5',
+          },
+          {
+            tier: 8,
+            name: 'Melon',
+            radius: 86,
+            points: 45,
+            c1: '#d9f99d',
+            c2: '#84cc16',
+            c3: '#4d7c0f',
+            particle: '#a3e635',
+            cheek: '#fecaca',
+          },
+          {
+            tier: 9,
+            name: 'Watermelon',
+            radius: 100,
+            points: 55,
+            c1: '#4ade80',
+            c2: '#16a34a',
+            c3: '#14532d',
+            particle: '#22c55e',
+            cheek: '#fda4af',
+          },
+        ];
+
+        // Musical pentatonic frequencies (C5 major pentatonic ascending)
+        const MERGE_NOTES = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51, 1567.98, 1760.0];
+
+        // ============================================================
+        // 2. Web Audio API Synthesizer
+        // ============================================================
+        class SoundFX {
+          constructor() {
+            this.ctx = null;
+            this.muted = safeStorageGet(STORAGE_MUTE_KEY, 'false') === 'true';
+            this.lastBounceAt = 0;
+            this.lastWarningStep = 0;
+          }
+
+          ensureContext() {
+            if (!this.ctx) {
+              const AudioCtx = window.AudioContext || window.webkitAudioContext;
+              if (AudioCtx) {
+                try {
+                  this.ctx = new AudioCtx();
+                } catch (e) {}
+              }
+            }
+            if (this.ctx && this.ctx.state === 'suspended') {
+              this.ctx.resume().catch(() => {});
+            }
+          }
+
+          toggleMute() {
+            this.muted = !this.muted;
+            safeStorageSet(STORAGE_MUTE_KEY, String(this.muted));
+            return this.muted;
+          }
+
+          playDrop() {
+            if (this.muted) return;
+            this.ensureContext();
+            if (!this.ctx) return;
+
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(340, now);
+            osc.frequency.exponentialRampToValueAtTime(520, now + 0.045);
+            osc.frequency.exponentialRampToValueAtTime(250, now + 0.11);
+
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.14, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.13);
+          }
+
+          playMerge(tier, combo) {
+            if (this.muted) return;
+            this.ensureContext();
+            if (!this.ctx) return;
+
+            const now = this.ctx.currentTime;
+            const baseFreq = MERGE_NOTES[Math.min(tier, MERGE_NOTES.length - 1)];
+            const comboFactor = Math.min(1 + combo * 0.045, 1.35);
+            const freq = baseFreq * comboFactor;
+
+            // Main pop tone
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq * 0.72, now);
+            osc.frequency.exponentialRampToValueAtTime(freq, now + 0.045);
+
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.18, now + 0.014);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.2);
+
+            // Soft sparkle harmonic
+            const osc2 = this.ctx.createOscillator();
+            const gain2 = this.ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(freq * 1.5, now + 0.015);
+            gain2.gain.setValueAtTime(0.001, now + 0.015);
+            gain2.gain.linearRampToValueAtTime(0.075, now + 0.03);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+            osc2.connect(gain2);
+            gain2.connect(this.ctx.destination);
+            osc2.start(now + 0.015);
+            osc2.stop(now + 0.19);
+          }
+
+          playWatermelonClear() {
+            if (this.muted) return;
+            this.ensureContext();
+            if (!this.ctx) return;
+
+            const notes = [523.25, 659.25, 783.99, 1046.5];
+            const now = this.ctx.currentTime;
+            notes.forEach((f, idx) => {
+              const t = now + idx * 0.065;
+              const osc = this.ctx.createOscillator();
+              const gain = this.ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(f, t);
+              gain.gain.setValueAtTime(0.001, t);
+              gain.gain.linearRampToValueAtTime(0.16, t + 0.02);
+              gain.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+              osc.connect(gain);
+              gain.connect(this.ctx.destination);
+              osc.start(t);
+              osc.stop(t + 0.36);
+            });
+          }
+
+          playBounce(speed) {
+            if (this.muted || speed < 140) return;
+            const nowMs = performance.now();
+            if (nowMs - this.lastBounceAt < 85) return;
+            this.lastBounceAt = nowMs;
+
+            this.ensureContext();
+            if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const vol = Math.min((speed - 140) / 800, 1) * 0.055;
+
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(80, now + 0.055);
+            gain.gain.setValueAtTime(vol, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.065);
+          }
+
+          playWarning(step) {
+            if (this.muted || step === this.lastWarningStep) return;
+            this.lastWarningStep = step;
+            this.ensureContext();
+            if (!this.ctx) return;
+
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(640, now);
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.06, now + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.1);
+          }
+
+          playGameOver() {
+            if (this.muted) return;
+            this.ensureContext();
+            if (!this.ctx) return;
+
+            const notes = [440, 349.23, 293.66, 220];
+            const now = this.ctx.currentTime;
+            notes.forEach((f, idx) => {
+              const t = now + idx * 0.11;
+              const osc = this.ctx.createOscillator();
+              const gain = this.ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(f, t);
+              gain.gain.setValueAtTime(0.001, t);
+              gain.gain.linearRampToValueAtTime(0.13, t + 0.02);
+              gain.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+              osc.connect(gain);
+              gain.connect(this.ctx.destination);
+              osc.start(t);
+              osc.stop(t + 0.36);
+            });
+          }
+        }
+
+        // ============================================================
+        // 3. Canvas Fruit Renderer (Glossy Gradients + Kawaii Faces)
+        // ============================================================
+        function drawFruitSprite(ctx, tier, x, y, r, angle = 0, options = {}) {
+          const def = FRUITS[tier];
+          const {
+            scale = 1,
+            blink = false,
+            surprised = false,
+            shadow = false,
+            alpha = 1,
+          } = options;
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.translate(x, y);
+          ctx.scale(scale, scale);
+
+          // Soft ground/ambient contact shadow
+          if (shadow) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(2, 4, r * 0.99, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(72, 36, 18, 0.12)';
+            ctx.fill();
+            ctx.restore();
+          }
+
+          ctx.rotate(angle);
+
+          // Base glossy sphere gradient
+          const grad = ctx.createRadialGradient(-r * 0.34, -r * 0.36, r * 0.12, 0, 0, r * 1.05);
+          grad.addColorStop(0, def.c1);
+          grad.addColorStop(0.65, def.c2);
+          grad.addColorStop(1, def.c3);
+
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          // Subtle crisp outer rim
+          ctx.lineWidth = Math.max(1.2, r * 0.032);
+          ctx.strokeStyle = 'rgba(59, 35, 23, 0.18)';
+          ctx.stroke();
+
+          // Tier-specific botanical textures & accents
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 0.985, 0, Math.PI * 2);
+          ctx.clip();
+
+          if (tier === 1) {
+            // Strawberry seeds
+            ctx.fillStyle = 'rgba(255, 238, 173, 0.85)';
+            const seeds = [
+              [-0.45, -0.25], [0.42, -0.28], [-0.52, 0.18], [0.5, 0.16],
+              [-0.22, 0.52], [0.24, 0.5], [0, -0.45],
+            ];
+            seeds.forEach(([sx, sy]) => {
+              ctx.beginPath();
+              ctx.ellipse(sx * r, sy * r, r * 0.045, r * 0.075, 0, 0, Math.PI * 2);
+              ctx.fill();
+            });
+          } else if (tier === 3) {
+            // Tangerine subtle pores
+            ctx.fillStyle = 'rgba(154, 52, 18, 0.22)';
+            const pores = [[-0.45, -0.35], [0.48, -0.2], [-0.55, 0.22], [0.42, 0.45], [-0.15, 0.62]];
+            pores.forEach(([px, py]) => {
+              ctx.beginPath();
+              ctx.arc(px * r, py * r, r * 0.035, 0, Math.PI * 2);
+              ctx.fill();
+            });
+          } else if (tier === 6) {
+            // Peach soft vertical cleft shading
+            ctx.strokeStyle = 'rgba(190, 24, 93, 0.18)';
+            ctx.lineWidth = Math.max(1.5, r * 0.04);
+            ctx.beginPath();
+            ctx.moveTo(0, -r * 0.95);
+            ctx.quadraticCurveTo(r * 0.14, -r * 0.45, 0, -r * 0.24);
+            ctx.stroke();
+          } else if (tier === 7) {
+            // Pineapple diamond crosshatch
+            ctx.strokeStyle = 'rgba(146, 64, 14, 0.22)';
+            ctx.lineWidth = Math.max(1.2, r * 0.025);
+            const step = r * 0.42;
+            for (let d = -r * 1.6; d <= r * 1.6; d += step) {
+              ctx.beginPath();
+              ctx.moveTo(d, -r);
+              ctx.lineTo(d + r * 1.2, r);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(d, -r);
+              ctx.lineTo(d - r * 1.2, r);
+              ctx.stroke();
+            }
+          } else if (tier === 8) {
+            // Melon netted ribs
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.26)';
+            ctx.lineWidth = Math.max(1.4, r * 0.024);
+            [-0.48, 0, 0.48].forEach((offset) => {
+              ctx.beginPath();
+              ctx.ellipse(offset * r * 0.55, 0, Math.abs(offset) * r * 0.55 + r * 0.22, r, 0, 0, Math.PI * 2);
+              ctx.stroke();
+            });
+          } else if (tier === 9) {
+            // Watermelon wavy dark stripes
+            ctx.strokeStyle = 'rgba(6, 78, 59, 0.58)';
+            ctx.lineWidth = r * 0.11;
+            ctx.lineCap = 'round';
+            [-0.56, -0.2, 0.2, 0.56].forEach((sx) => {
+              ctx.beginPath();
+              for (let yy = -r; yy <= r; yy += r * 0.22) {
+                const wave = Math.sin(yy * 0.12) * r * 0.055;
+                const xPos = sx * r * (1 - Math.abs(yy / r) * 0.25) + wave;
+                if (yy === -r) ctx.moveTo(xPos, yy);
+                else ctx.lineTo(xPos, yy);
+              }
+              ctx.stroke();
+            });
+          }
+          ctx.restore();
+
+          // Glossy specular highlights
+          ctx.save();
+          ctx.beginPath();
+          ctx.ellipse(-r * 0.34, -r * 0.38, r * 0.28, r * 0.15, -0.6, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.46)';
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(-r * 0.54, -r * 0.14, r * 0.065, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.fill();
+          ctx.restore();
+
+          // Stems / Leaves / Crowns on top (drawn cleanly on perimeter)
+          if (tier === 0 || tier === 4 || tier === 5) {
+            // Stem + cute leaf (Cherry, Apple, Pear)
+            ctx.strokeStyle = '#6b4226';
+            ctx.lineWidth = Math.max(1.6, r * 0.09);
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(0, -r * 0.88);
+            ctx.quadraticCurveTo(r * 0.08, -r * 1.18, r * 0.24, -r * 1.24);
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(r * 0.2, -r * 1.02);
+            ctx.rotate(-0.35);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, r * 0.24, r * 0.12, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#40916c';
+            ctx.fill();
+            ctx.restore();
+          } else if (tier === 1) {
+            // Strawberry leafy calyx
+            ctx.fillStyle = '#2d6a4f';
+            for (let i = -2; i <= 2; i++) {
+              ctx.save();
+              ctx.translate(i * r * 0.18, -r * 0.88);
+              ctx.rotate(i * 0.28);
+              ctx.beginPath();
+              ctx.ellipse(0, 0, r * 0.18, r * 0.09, 0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          } else if (tier === 2 || tier === 8) {
+            // Grape / Melon tiny green nub & leaf
+            ctx.fillStyle = '#52b788';
+            ctx.beginPath();
+            ctx.ellipse(r * 0.16, -r * 0.98, r * 0.2, r * 0.1, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#6b4226';
+            ctx.lineWidth = Math.max(1.5, r * 0.06);
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(0, -r * 0.9);
+            ctx.lineTo(0, -r * 1.08);
+            ctx.stroke();
+          } else if (tier === 3 || tier === 6) {
+            // Tangerine / Peach bright leaf
+            ctx.save();
+            ctx.translate(r * 0.14, -r * 0.96);
+            ctx.rotate(-0.28);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, r * 0.22, r * 0.1, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#22c55e';
+            ctx.fill();
+            ctx.restore();
+          } else if (tier === 7) {
+            // Pineapple spiky crown
+            ctx.fillStyle = '#15803d';
+            const spikes = [
+              [-0.28, -0.9, -0.45, -1.24, -0.08, -0.98],
+              [-0.12, -0.95, -0.15, -1.32, 0.04, -0.98],
+              [-0.02, -0.98, 0.12, -1.34, 0.18, -0.96],
+              [0.1, -0.95, 0.42, -1.24, 0.28, -0.9],
+            ];
+            spikes.forEach(([x1, y1, x2, y2, x3, y3]) => {
+              ctx.beginPath();
+              ctx.moveTo(x1 * r, y1 * r);
+              ctx.lineTo(x2 * r, y2 * r);
+              ctx.lineTo(x3 * r, y3 * r);
+              ctx.closePath();
+              ctx.fill();
+            });
+          }
+
+          // Kawaii Face
+          const faceY = r * 0.06;
+          const eyeSpread = r * 0.26;
+          const eyeR = Math.max(1.5, r * 0.082);
+          const faceInk = tier === 9 ? '#18100c' : '#2d1a10';
+
+          // Rosy cheeks
+          ctx.fillStyle = def.cheek;
+          ctx.globalAlpha = alpha * 0.65;
+          ctx.beginPath();
+          ctx.ellipse(-eyeSpread * 1.38, faceY + r * 0.13, r * 0.13, r * 0.075, 0, 0, Math.PI * 2);
+          ctx.ellipse(eyeSpread * 1.38, faceY + r * 0.13, r * 0.13, r * 0.075, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = alpha;
+
+          // Eyes
+          if (blink) {
+            ctx.strokeStyle = faceInk;
+            ctx.lineWidth = Math.max(1.4, r * 0.055);
+            ctx.lineCap = 'round';
+            [-1, 1].forEach((dir) => {
+              ctx.beginPath();
+              ctx.arc(dir * eyeSpread, faceY, eyeR * 0.95, Math.PI * 1.1, Math.PI * 1.9);
+              ctx.stroke();
+            });
+          } else {
+            ctx.fillStyle = faceInk;
+            [-1, 1].forEach((dir) => {
+              ctx.beginPath();
+              ctx.arc(dir * eyeSpread, faceY, eyeR, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Eye catchlight
+              ctx.fillStyle = '#ffffff';
+              ctx.beginPath();
+              ctx.arc(dir * eyeSpread - eyeR * 0.28, faceY - eyeR * 0.3, eyeR * 0.36, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = faceInk;
+            });
+          }
+
+          // Mouth
+          ctx.strokeStyle = faceInk;
+          ctx.lineWidth = Math.max(1.3, r * 0.055);
+          ctx.lineCap = 'round';
+          if (surprised) {
+            ctx.beginPath();
+            ctx.ellipse(0, faceY + r * 0.18, r * 0.075, r * 0.095, 0, 0, Math.PI * 2);
+            ctx.fillStyle = faceInk;
+            ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.arc(0, faceY + r * 0.11, r * 0.12, 0.18 * Math.PI, 0.82 * Math.PI);
+            ctx.stroke();
+          }
+
+          ctx.restore();
+        }
+
+        // ============================================================
+        // 4. Game State & Physics Engine
+        // ============================================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const nextCanvas = document.getElementById('nextCanvas');
+        const nextCtx = nextCanvas.getContext('2d');
+        const mobileNextCanvas = document.getElementById('mobileNextCanvas');
+        const mobileNextCtx = mobileNextCanvas.getContext('2d');
+        const evoCanvas = document.getElementById('evoCanvas');
+        const evoCtx = evoCanvas.getContext('2d');
+
+        // UI Elements
+        const scoreValEl = document.getElementById('scoreVal');
+        const bestValEl = document.getElementById('bestVal');
+        const mobileScoreValEl = document.getElementById('mobileScoreVal');
+        const mobileBestValEl = document.getElementById('mobileBestVal');
+        const nextNameEl = document.getElementById('nextName');
+
+        const titleOverlay = document.getElementById('titleOverlay');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const finalScoreValEl = document.getElementById('finalScoreVal');
+        const finalBestValEl = document.getElementById('finalBestVal');
+        const newBestNoteEl = document.getElementById('newBestNote');
+
+        const startBtn = document.getElementById('startBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const mobileRestartBtn = document.getElementById('mobileRestartBtn');
+        const muteBtn = document.getElementById('muteBtn');
+        const mobileMuteBtn = document.getElementById('mobileMuteBtn');
+        const muteIconSlot = document.getElementById('muteIconSlot');
+        const muteLabel = document.getElementById('muteLabel');
+
+        const sfx = new SoundFX();
+
+        let gameState = 'TITLE'; // 'TITLE' | 'PLAYING' | 'GAMEOVER'
+        let fruits = [];
+        let particles = [];
+        let popups = [];
+        let rings = [];
+
+        let nextFruitId = 1;
+        let score = 0;
+        let bestScore = Number(safeStorageGet(STORAGE_BEST_KEY, '0')) || 0;
+        let currentTier = 0;
+        let upcomingTier = 1;
+        let aimX = (BOX_LEFT + BOX_RIGHT) / 2;
+        let targetAimX = aimX;
+        let dropCooldown = 0;
+        let canDrop = true;
+        let dropperPopScale = 1;
+
+        let justDroppedId = null;
+        let dangerTimer = 0;
+        let shakeTime = 0;
+        let shakeMag = 0;
+
+        let comboCount = 0;
+        let comboTimer = 0;
+
+        // Keyboard aiming state
+        const keysHeld = { left: false, right: false };
+
+        // ============================================================
+        // 5. High-DPI Canvas Setup & Static Renders
+        // ============================================================
+        function configureHiDPICanvas(cvs, context, logicalW, logicalH) {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+          cvs.width = Math.round(logicalW * dpr);
+          cvs.height = Math.round(logicalH * dpr);
+          context.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function resizePlayfield() {
+          configureHiDPICanvas(canvas, ctx, LOGICAL_W, LOGICAL_H);
+          configureHiDPICanvas(nextCanvas, nextCtx, 76, 76);
+          configureHiDPICanvas(mobileNextCanvas, mobileNextCtx, 34, 34);
+          configureHiDPICanvas(evoCanvas, evoCtx, 196, 218);
+
+          const frame = document.getElementById('canvasFrame');
+          const availW = frame.clientWidth;
+          const availH = frame.clientHeight;
+          const aspect = LOGICAL_W / LOGICAL_H;
+
+          let drawW = availW;
+          let drawH = drawW / aspect;
+          if (drawH > availH) {
+            drawH = availH;
+            drawW = drawH * aspect;
+          }
+          canvas.style.width = `${Math.floor(drawW)}px`;
+          canvas.style.height = `${Math.floor(drawH)}px`;
+
+          drawEvolutionChart();
+          drawNextFruitPreview();
+        }
+
+        function drawEvolutionChart() {
+          evoCtx.clearRect(0, 0, 196, 218);
+          // Arrange 10 fruits neatly in a 2-column progression ladder (1..5 left, 6..10 right)
+          const leftX = 16;
+          const rightX = 104;
+          for (let i = 0; i < FRUITS.length; i++) {
+            const col = i < 5 ? 0 : 1;
+            const row = i % 5;
+            const cx = col === 0 ? leftX : rightX;
+            const cy = 22 + row * 43;
+            const previewR = 9.5 + i * 0.45;
+
+            drawFruitSprite(evoCtx, i, cx, cy, previewR, 0, { shadow: false });
+
+            evoCtx.fillStyle = '#5c3c2e';
+            evoCtx.font = '700 10.5px ui-rounded, system-ui, sans-serif';
+            evoCtx.textAlign = 'left';
+            evoCtx.textBaseline = 'middle';
+            evoCtx.fillText(FRUITS[i].name, cx + previewR + 6, cy);
+          }
+        }
+
+        function drawNextFruitPreview() {
+          nextNameEl.textContent = FRUITS[upcomingTier].name;
+
+          // Desktop preview
+          nextCtx.clearRect(0, 0, 76, 76);
+          const deskR = Math.min(27, Math.max(14, FRUITS[upcomingTier].radius * 0.66));
+          drawFruitSprite(nextCtx, upcomingTier, 38, 41, deskR, 0, { shadow: true });
+
+          // Mobile preview
+          mobileNextCtx.clearRect(0, 0, 34, 34);
+          const mobR = Math.min(12.5, Math.max(8, FRUITS[upcomingTier].radius * 0.34));
+          drawFruitSprite(mobileNextCtx, upcomingTier, 17, 18.5, mobR, 0, { shadow: false });
+        }
+
+        function updateMuteUI() {
+          const muted = sfx.muted;
+          const iconSvg = muted
+            ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`
+            : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+
+          muteIconSlot.innerHTML = iconSvg;
+          muteLabel.textContent = muted ? 'Muted' : 'Sound On';
+          mobileMuteBtn.innerHTML = iconSvg;
+          muteBtn.setAttribute('aria-pressed', String(muted));
+          mobileMuteBtn.setAttribute('aria-pressed', String(muted));
+        }
+
+        function updateScoreUI() {
+          scoreValEl.textContent = score.toLocaleString();
+          bestValEl.textContent = bestScore.toLocaleString();
+          mobileScoreValEl.textContent = score.toLocaleString();
+          mobileBestValEl.textContent = bestScore.toLocaleString();
+        }
+
+        // ============================================================
+        // 6. Game Flow & Spawning
+        // ============================================================
+        function randomSpawnTier() {
+          // Tiers 1 to 5 (0..4) weighted slightly toward smaller fruits for good pacing
+          const weights = [0.28, 0.26, 0.21, 0.15, 0.10];
+          const r = Math.random();
+          let acc = 0;
+          for (let i = 0; i < weights.length; i++) {
+            acc += weights[i];
+            if (r <= acc) return i;
+          }
+          return 0;
+        }
+
+        function clampAimX(x, tier) {
+          const r = FRUITS[tier].radius;
+          const minX = BOX_LEFT + r + 3;
+          const maxX = BOX_RIGHT - r - 3;
+          return Math.max(minX, Math.min(maxX, x));
+        }
+
+        function createFruit(tier, x, y, vx = 0, vy = 0, initialScale = 1) {
+          const def = FRUITS[tier];
+          const mass = def.radius * def.radius;
+          const inertia = 0.5 * mass * def.radius * def.radius;
+          return {
+            id: nextFruitId++,
+            tier,
+            r: def.radius,
+            mass,
+            invMass: 1 / mass,
+            inertia,
+            invInertia: 1 / inertia,
+            x,
+            y,
+            vx,
+            vy,
+            angle: (Math.random() - 0.5) * 0.25,
+            omega: 0,
+            scale: initialScale,
+            age: 0,
+            collided: false,
+            merged: false,
+            blinkTimer: 1.5 + Math.random() * 3.5,
+            isBlinking: false,
+            surprisedTimer: initialScale < 1 ? 0.35 : 0,
+          };
+        }
+
+        function seedTitleShowcase() {
+          // Decorative calm fruits resting in the glass box on the Title Screen
+          fruits = [
+            createFruit(4, 110, BOX_BOTTOM - 44),
+            createFruit(6, 235, BOX_BOTTOM - 63),
+            createFruit(3, 345, BOX_BOTTOM - 35),
+            createFruit(2, 165, BOX_BOTTOM - 86),
+            createFruit(1, 295, BOX_BOTTOM - 102),
+            createFruit(0, 210, BOX_BOTTOM - 135),
+          ];
+          particles = [];
+          popups = [];
+          rings = [];
+        }
+
+        function startNewGame() {
+          sfx.ensureContext();
+          fruits = [];
+          particles = [];
+          popups = [];
+          rings = [];
+          score = 0;
+          dangerTimer = 0;
+          sfx.lastWarningStep = 0;
+          justDroppedId = null;
+          dropCooldown = 0;
+          canDrop = true;
+          comboCount = 0;
+          comboTimer = 0;
+          shakeTime = 0;
+
+          currentTier = randomSpawnTier();
+          upcomingTier = randomSpawnTier();
+          aimX = (BOX_LEFT + BOX_RIGHT) / 2;
+          targetAimX = aimX;
+          dropperPopScale = 0.7;
+
+          gameState = 'PLAYING';
+          titleOverlay.classList.add('hidden');
+          gameOverOverlay.classList.add('hidden');
+
+          updateScoreUI();
+          drawNextFruitPreview();
+        }
+
+        function triggerGameOver() {
+          if (gameState === 'GAMEOVER') return;
+          gameState = 'GAMEOVER';
+          sfx.playGameOver();
+
+          const isNewBest = score > 0 && score >= bestScore;
+          finalScoreValEl.textContent = score.toLocaleString();
+          finalBestValEl.textContent = bestScore.toLocaleString();
+          newBestNoteEl.classList.toggle('hidden', !isNewBest);
+          gameOverOverlay.classList.remove('hidden');
+        }
+
+        function dropCurrentFruit() {
+          if (gameState !== 'PLAYING' || !canDrop) return;
+
+          const clampedX = clampAimX(aimX, currentTier);
+          const dropped = createFruit(currentTier, clampedX, DROP_Y, 0, 45, 1);
+          dropped.surprisedTimer = 0.25;
+          fruits.push(dropped);
+
+          justDroppedId = dropped.id;
+          canDrop = false;
+          dropCooldown = DROP_COOLDOWN;
+          sfx.playDrop();
+        }
+
+        // ============================================================
+        // 7. Visual Effects (Particles, Rings, Floating Score)
+        // ============================================================
+        function spawnMergeEffects(x, y, tier, pointsEarned, isWatermelonClear = false) {
+          const def = FRUITS[tier];
+          const count = isWatermelonClear ? 34 : 14 + tier * 2;
+
+          for (let i = 0; i < count; i++) {
+            const ang = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+            const spd = (isWatermelonClear ? 160 : 95) + Math.random() * 190;
+            particles.push({
+              x,
+              y,
+              vx: Math.cos(ang) * spd,
+              vy: Math.sin(ang) * spd - 65,
+              size: (isWatermelonClear ? 5 : 3.5) + Math.random() * 4.5,
+              color: isWatermelonClear
+                ? (i % 3 === 0 ? '#facc15' : i % 2 === 0 ? '#4ade80' : '#fb7185')
+                : (i % 3 === 0 ? '#ffffff' : def.particle),
+              life: 0,
+              maxLife: 0.45 + Math.random() * 0.3,
+            });
+          }
+
+          rings.push({
+            x,
+            y,
+            r: def.radius * 0.65,
+            maxR: def.radius * (isWatermelonClear ? 2.6 : 1.9),
+            color: isWatermelonClear ? '#22c55e' : def.particle,
+            life: 0,
+            maxLife: 0.36,
+          });
+
+          popups.push({
+            x,
+            y: y - 8,
+            text: isWatermelonClear ? `+${pointsEarned} CLEAR!` : `+${pointsEarned}`,
+            color: isWatermelonClear ? '#15803d' : '#b42318',
+            big: isWatermelonClear || tier >= 6,
+            life: 0,
+            maxLife: isWatermelonClear ? 1.25 : 0.85,
+          });
+        }
+
+        function addScore(pts) {
+          score += pts;
+          if (score > bestScore) {
+            bestScore = score;
+            safeStorageSet(STORAGE_BEST_KEY, String(bestScore));
+          }
+          updateScoreUI();
+        }
+
+        // ============================================================
+        // 8. Physics Simulation (Sub-stepped Circle Physics)
+        // ============================================================
+        function stepPhysics(dt) {
+          const subDt = dt / SUBSTEPS;
+          const linDamp = Math.pow(0.96, subDt * 60);
+          const angDamp = Math.pow(0.92, subDt * 60);
+
+          for (let step = 0; step < SUBSTEPS; step++) {
+            // 1. Integrate velocities, angular motion & positions
+            for (let i = 0; i < fruits.length; i++) {
+              const f = fruits[i];
+              f.vy += GRAVITY * subDt;
+              f.vx *= linDamp;
+              f.vy *= linDamp;
+              f.omega *= angDamp;
+
+              // Micro-sleep threshold so settled piles don't jitter
+              if (f.collided && Math.abs(f.vx) < 2.2 && Math.abs(f.vy) < 2.2 && Math.abs(f.omega) < 0.03) {
+                f.vx = 0;
+                f.vy = 0;
+                f.omega = 0;
+              }
+
+              f.x += f.vx * subDt;
+              f.y += f.vy * subDt;
+              f.angle += f.omega * subDt;
+            }
+
+            // 2. Wall & floor collisions with rotational surface friction
+            for (let i = 0; i < fruits.length; i++) {
+              const f = fruits[i];
+              const minX = BOX_LEFT + f.r;
+              const maxX = BOX_RIGHT - f.r;
+              const maxY = BOX_BOTTOM - f.r;
+
+              if (f.x < minX) {
+                f.x = minX;
+                if (f.vx < 0) {
+                  if (step === 0) sfx.playBounce(Math.abs(f.vx));
+                  const e = Math.abs(f.vx) > 35 ? RESTITUTION : 0;
+                  const jn = -(1 + e) * f.vx * f.mass;
+                  f.vx = -f.vx * e;
+                  // Wall tangent (0, 1): surface vel = vy - omega * r
+                  const vt = f.vy - f.omega * f.r;
+                  const denomT = f.invMass + f.r * f.r * f.invInertia;
+                  let jt = -vt / denomT;
+                  const maxJt = COULOMB_MU * Math.abs(jn);
+                  jt = Math.max(-maxJt, Math.min(maxJt, jt));
+                  f.vy += jt * f.invMass;
+                  f.omega -= jt * f.r * f.invInertia;
+                  f.collided = true;
+                }
+              } else if (f.x > maxX) {
+                f.x = maxX;
+                if (f.vx > 0) {
+                  if (step === 0) sfx.playBounce(Math.abs(f.vx));
+                  const e = Math.abs(f.vx) > 35 ? RESTITUTION : 0;
+                  const jn = (1 + e) * f.vx * f.mass;
+                  f.vx = -f.vx * e;
+                  // Wall tangent (0, -1): surface vel = -vy - omega * r
+                  const vt = -f.vy - f.omega * f.r;
+                  const denomT = f.invMass + f.r * f.r * f.invInertia;
+                  let jt = -vt / denomT;
+                  const maxJt = COULOMB_MU * Math.abs(jn);
+                  jt = Math.max(-maxJt, Math.min(maxJt, jt));
+                  f.vy -= jt * f.invMass;
+                  f.omega -= jt * f.r * f.invInertia;
+                  f.collided = true;
+                }
+              }
+
+              if (f.y > maxY) {
+                f.y = maxY;
+                if (f.vy > 0) {
+                  if (step === 0) sfx.playBounce(Math.abs(f.vy));
+                  const e = Math.abs(f.vy) > 35 ? RESTITUTION : 0;
+                  const jn = (1 + e) * f.vy * f.mass + GRAVITY * f.mass * subDt;
+                  f.vy = -f.vy * e;
+                  if (Math.abs(f.vy) < 12) f.vy = 0;
+
+                  // Floor tangent (-1, 0): surface vel = -vx - omega * r
+                  const vt = -f.vx - f.omega * f.r;
+                  const denomT = f.invMass + f.r * f.r * f.invInertia;
+                  let jt = -vt / denomT;
+                  const maxJt = COULOMB_MU * Math.abs(jn);
+                  jt = Math.max(-maxJt, Math.min(maxJt, jt));
+                  f.vx -= jt * f.invMass;
+                  f.omega -= jt * f.r * f.invInertia;
+                  f.collided = true;
+                } else {
+                  // Resting rolling contact on floor
+                  const vt = -f.vx - f.omega * f.r;
+                  const denomT = f.invMass + f.r * f.r * f.invInertia;
+                  const jn = GRAVITY * f.mass * subDt;
+                  let jt = -vt / denomT;
+                  const maxJt = COULOMB_MU * jn;
+                  jt = Math.max(-maxJt, Math.min(maxJt, jt));
+                  f.vx -= jt * f.invMass;
+                  f.omega -= jt * f.r * f.invInertia;
+                }
+              }
+            }
+
+            // 3. Circle-to-circle rigid-body collisions & same-tier merge check
+            const pendingMerges = [];
+
+            for (let i = 0; i < fruits.length; i++) {
+              const a = fruits[i];
+              if (a.merged) continue;
+
+              for (let j = i + 1; j < fruits.length; j++) {
+                const b = fruits[j];
+                if (b.merged) continue;
+
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const minDist = a.r + b.r;
+                const distSq = dx * dx + dy * dy;
+
+                if (distSq < minDist * minDist) {
+                  const dist = Math.sqrt(distSq) || 0.001;
+
+                  // Same tier -> Merge!
+                  if (gameState === 'PLAYING' && a.tier === b.tier) {
+                    a.merged = true;
+                    b.merged = true;
+                    a.collided = true;
+                    b.collided = true;
+                    pendingMerges.push([a, b]);
+                    break;
+                  }
+
+                  a.collided = true;
+                  b.collided = true;
+
+                  const nx = dx / dist;
+                  const ny = dy / dist;
+                  const overlap = minDist - dist;
+
+                  // Baumgarte positional relaxation weighted by inverse mass
+                  const invMassSum = a.invMass + b.invMass;
+                  const slop = 0.05;
+                  if (overlap > slop) {
+                    const corr = ((overlap - slop) * 0.82) / invMassSum;
+                    a.x -= nx * corr * a.invMass;
+                    a.y -= ny * corr * a.invMass;
+                    b.x += nx * corr * b.invMass;
+                    b.y += ny * corr * b.invMass;
+                  }
+
+                  // Relative velocity at contact point (including angular velocity)
+                  const tx = -ny;
+                  const ty = nx;
+                  const rvx = b.vx - a.vx;
+                  const rvy = b.vy - a.vy;
+                  const velAlongNormal = rvx * nx + rvy * ny;
+
+                  if (velAlongNormal < 0) {
+                    if (step === 0 && Math.abs(velAlongNormal) > 180) {
+                      sfx.playBounce(Math.abs(velAlongNormal));
+                      if (Math.abs(velAlongNormal) > 320) {
+                        a.surprisedTimer = 0.25;
+                        b.surprisedTimer = 0.25;
+                      }
+                    }
+
+                    const e = Math.abs(velAlongNormal) > 35 ? RESTITUTION : 0;
+                    const jn = (-(1 + e) * velAlongNormal) / invMassSum;
+                    const ix = jn * nx;
+                    const iy = jn * ny;
+
+                    a.vx -= ix * a.invMass;
+                    a.vy -= iy * a.invMass;
+                    b.vx += ix * b.invMass;
+                    b.vy += iy * b.invMass;
+
+                    // True disk rigid-body tangential friction & spin transfer
+                    const vt = rvx * tx + rvy * ty - b.omega * b.r - a.omega * a.r;
+                    const denomT = invMassSum + a.r * a.r * a.invInertia + b.r * b.r * b.invInertia;
+                    let jt = -vt / denomT;
+                    const maxJt = COULOMB_MU * Math.abs(jn);
+                    jt = Math.max(-maxJt, Math.min(maxJt, jt));
+
+                    a.vx -= jt * tx * a.invMass;
+                    a.vy -= jt * ty * a.invMass;
+                    b.vx += jt * tx * b.invMass;
+                    b.vy += jt * ty * b.invMass;
+
+                    a.omega -= jt * a.r * a.invInertia;
+                    b.omega -= jt * b.r * b.invInertia;
+                  }
+                }
+              }
+            }
+
+            // 4. Resolve merges after collision pass
+            if (pendingMerges.length > 0) {
+              fruits = fruits.filter((f) => !f.merged);
+
+              for (let m = 0; m < pendingMerges.length; m++) {
+                const [a, b] = pendingMerges[m];
+                const mx = (a.x + b.x) * 0.5;
+                const my = (a.y + b.y) * 0.5;
+
+                comboCount = comboTimer > 0 ? comboCount + 1 : 0;
+                comboTimer = 0.85;
+
+                if (a.tier === FRUITS.length - 1) {
+                  // Two Watermelons merged -> Huge clear bonus!
+                  const bonus = WATERMELON_BONUS + FRUITS[a.tier].points;
+                  addScore(bonus);
+                  spawnMergeEffects(mx, my, a.tier, bonus, true);
+                  sfx.playWatermelonClear();
+                  shakeTime = 0.28;
+                  shakeMag = 6;
+                } else {
+                  const nextTier = a.tier + 1;
+                  const nextDef = FRUITS[nextTier];
+                  const clampedX = Math.max(BOX_LEFT + nextDef.radius, Math.min(BOX_RIGHT - nextDef.radius, mx));
+                  const clampedY = Math.min(BOX_BOTTOM - nextDef.radius, my);
+
+                  const mergedFruit = createFruit(
+                    nextTier,
+                    clampedX,
+                    clampedY,
+                    (a.vx + b.vx) * 0.35,
+                    -165,
+                    0.62
+                  );
+                  mergedFruit.collided = true;
+                  fruits.push(mergedFruit);
+
+                  // Gentle radial shockwave to neighbors
+                  const pushRange = nextDef.radius * 2.4;
+                  for (let k = 0; k < fruits.length; k++) {
+                    const other = fruits[k];
+                    if (other.id === mergedFruit.id) continue;
+                    const ox = other.x - clampedX;
+                    const oy = other.y - clampedY;
+                    const od = Math.hypot(ox, oy);
+                    if (od > 0.1 && od < pushRange) {
+                      const push = (1 - od / pushRange) * 95;
+                      other.vx += (ox / od) * push;
+                      other.vy += (oy / od) * push - 20;
+                    }
+                  }
+
+                  addScore(nextDef.points);
+                  spawnMergeEffects(clampedX, clampedY, nextTier, nextDef.points, false);
+                  sfx.playMerge(nextTier, comboCount);
+
+                  if (nextTier >= 6) {
+                    shakeTime = 0.16;
+                    shakeMag = 2.5 + (nextTier - 6) * 0.8;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // ============================================================
+        // 9. Frame Update Loop
+        // ============================================================
+        function update(dt) {
+          // Keyboard aim smoothing
+          if (gameState === 'PLAYING') {
+            const keySpeed = 340;
+            if (keysHeld.left) targetAimX -= keySpeed * dt;
+            if (keysHeld.right) targetAimX += keySpeed * dt;
+            targetAimX = clampAimX(targetAimX, currentTier);
+            aimX += (targetAimX - aimX) * Math.min(1, dt * 24);
+          }
+
+          // Drop cooldown & next fruit spawn
+          if (gameState === 'PLAYING' && !canDrop) {
+            dropCooldown -= dt;
+            if (dropCooldown <= 0) {
+              canDrop = true;
+              currentTier = upcomingTier;
+              upcomingTier = randomSpawnTier();
+              aimX = clampAimX(aimX, currentTier);
+              targetAimX = clampAimX(targetAimX, currentTier);
+              dropperPopScale = 0.55;
+              drawNextFruitPreview();
+            }
+          }
+
+          if (dropperPopScale < 1) {
+            dropperPopScale = Math.min(1, dropperPopScale + dt * 3.8);
+          }
+
+          if (comboTimer > 0) {
+            comboTimer = Math.max(0, comboTimer - dt);
+            if (comboTimer === 0) comboCount = 0;
+          }
+
+          if (shakeTime > 0) {
+            shakeTime = Math.max(0, shakeTime - dt);
+          }
+
+          // Step 2D circle physics
+          stepPhysics(dt);
+
+          // Update fruit animations & blink timers
+          let anyInDanger = false;
+          for (let i = 0; i < fruits.length; i++) {
+            const f = fruits[i];
+            f.age += dt;
+            if (f.scale < 1) {
+              f.scale = Math.min(1, f.scale + dt * 4.2);
+            }
+            if (f.surprisedTimer > 0) {
+              f.surprisedTimer = Math.max(0, f.surprisedTimer - dt);
+            }
+
+            f.blinkTimer -= dt;
+            if (f.blinkTimer <= 0) {
+              if (!f.isBlinking) {
+                f.isBlinking = true;
+                f.blinkTimer = 0.13;
+              } else {
+                f.isBlinking = false;
+                f.blinkTimer = 2.2 + Math.random() * 4.0;
+              }
+            }
+
+            // Danger Line check: settled/supported fruit remaining above the Danger Line
+            if (gameState === 'PLAYING') {
+              const isSettledAbove =
+                f.collided &&
+                (f.id !== justDroppedId || f.age > 0.45) &&
+                Math.abs(f.vy) < 160;
+              if (isSettledAbove && f.y - f.r < DANGER_Y) {
+                anyInDanger = true;
+              }
+            }
+          }
+
+          // Danger timer update
+          if (gameState === 'PLAYING') {
+            if (anyInDanger) {
+              dangerTimer += dt;
+              if (dangerTimer >= 1.0 && dangerTimer < 1.5) sfx.playWarning(1);
+              else if (dangerTimer >= 1.5) sfx.playWarning(2);
+
+              if (dangerTimer >= DANGER_LIMIT) {
+                triggerGameOver();
+              }
+            } else {
+              dangerTimer = Math.max(0, dangerTimer - dt * 2.5);
+              if (dangerTimer === 0) sfx.lastWarningStep = 0;
+            }
+          }
+
+          // Update particles
+          for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.life += dt;
+            if (p.life >= p.maxLife) {
+              particles.splice(i, 1);
+              continue;
+            }
+            p.vy += 420 * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+          }
+
+          // Update rings
+          for (let i = rings.length - 1; i >= 0; i--) {
+            const rg = rings[i];
+            rg.life += dt;
+            if (rg.life >= rg.maxLife) {
+              rings.splice(i, 1);
+            }
+          }
+
+          // Update score popups
+          for (let i = popups.length - 1; i >= 0; i--) {
+            const pop = popups[i];
+            pop.life += dt;
+            if (pop.life >= pop.maxLife) {
+              popups.splice(i, 1);
+              continue;
+            }
+            pop.y -= 38 * dt;
+          }
+        }
+
+        // ============================================================
+        // 10. Canvas Render Pass
+        // ============================================================
+        function getAimLandingY(x, radius) {
+          let bestY = BOX_BOTTOM - radius;
+          for (let i = 0; i < fruits.length; i++) {
+            const f = fruits[i];
+            const dx = Math.abs(x - f.x);
+            const sumR = radius + f.r;
+            if (dx < sumR) {
+              const hitY = f.y - Math.sqrt(sumR * sumR - dx * dx);
+              if (hitY < bestY) bestY = hitY;
+            }
+          }
+          return Math.max(DROP_Y, bestY);
+        }
+
+        function drawRoundedBoxPath(context, x, y, w, h, rBottom) {
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x, y + h - rBottom);
+          context.quadraticCurveTo(x, y + h, x + rBottom, y + h);
+          context.lineTo(x + w - rBottom, y + h);
+          context.quadraticCurveTo(x + w, y + h, x + w, y + h - rBottom);
+          context.lineTo(x + w, y);
+        }
+
+        function render(nowSec) {
+          ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H);
+
+          ctx.save();
+          if (shakeTime > 0) {
+            const sx = (Math.random() - 0.5) * shakeMag * 2;
+            const sy = (Math.random() - 0.5) * shakeMag * 2;
+            ctx.translate(sx, sy);
+          }
+
+          // 1. Glass Box Back Surface
+          ctx.save();
+          drawRoundedBoxPath(ctx, BOX_LEFT, BOX_TOP, BOX_WIDTH, BOX_BOTTOM - BOX_TOP, 22);
+          ctx.closePath();
+          const boxGrad = ctx.createLinearGradient(0, BOX_TOP, 0, BOX_BOTTOM);
+          boxGrad.addColorStop(0, 'rgba(255, 253, 249, 0.42)');
+          boxGrad.addColorStop(0.6, 'rgba(255, 248, 240, 0.58)');
+          boxGrad.addColorStop(1, 'rgba(253, 236, 220, 0.72)');
+          ctx.fillStyle = boxGrad;
+          ctx.fill();
+
+          // Soft ambient shadow beneath the glass container
+          ctx.shadowColor = 'rgba(116, 67, 40, 0.12)';
+          ctx.shadowBlur = 18;
+          ctx.shadowOffsetY = 8;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.01)';
+          ctx.stroke();
+          ctx.restore();
+
+          // 2. Danger Zone Warning Tint (when active)
+          if (dangerTimer > 0.15 && gameState === 'PLAYING') {
+            const urgency = Math.min(1, dangerTimer / DANGER_LIMIT);
+            const pulse = 0.5 + 0.5 * Math.sin(nowSec * (8 + urgency * 10));
+            ctx.save();
+            ctx.fillStyle = `rgba(225, 29, 72, ${(0.05 + urgency * 0.12) * (0.65 + 0.35 * pulse)})`;
+            ctx.fillRect(BOX_LEFT + 2, BOX_TOP, BOX_WIDTH - 4, DANGER_Y - BOX_TOP);
+            ctx.restore();
+          }
+
+          // 3. Aim Guide Line & Held Fruit at Top
+          if (gameState === 'PLAYING' && canDrop) {
+            const heldR = FRUITS[currentTier].radius;
+            const landingY = getAimLandingY(aimX, heldR);
+
+            // Vertical dotted aim line
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([5, 7]);
+            ctx.moveTo(aimX, DROP_Y + heldR + 4);
+            ctx.lineTo(aimX, landingY);
+            ctx.strokeStyle = 'rgba(117, 83, 66, 0.36)';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Subtle landing ghost ring
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(aimX, landingY, heldR * 0.96, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(117, 83, 66, 0.14)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.restore();
+
+            // Draw fruit in dropper
+            drawFruitSprite(ctx, currentTier, aimX, DROP_Y, heldR, 0, {
+              scale: dropperPopScale,
+              shadow: true,
+            });
+          }
+
+          // 4. Danger Line (dashed red)
+          ctx.save();
+          const isFlashing = dangerTimer > 0.25 && gameState === 'PLAYING';
+          const flashOn = !isFlashing || Math.sin(nowSec * 16) > -0.2;
+          ctx.beginPath();
+          ctx.setLineDash([8, 7]);
+          ctx.moveTo(BOX_LEFT + 6, DANGER_Y);
+          ctx.lineTo(BOX_RIGHT - 6, DANGER_Y);
+          ctx.strokeStyle = isFlashing
+            ? (flashOn ? 'rgba(225, 29, 72, 0.95)' : 'rgba(225, 29, 72, 0.22)')
+            : 'rgba(225, 29, 72, 0.55)';
+          ctx.lineWidth = isFlashing ? 3 : 2;
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.font = '700 10px ui-rounded, system-ui, sans-serif';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'bottom';
+          ctx.fillStyle = isFlashing ? 'rgba(225, 29, 72, 0.95)' : 'rgba(225, 29, 72, 0.65)';
+          const dangerText = isFlashing
+            ? `DANGER ${(Math.max(0, DANGER_LIMIT - dangerTimer)).toFixed(1)}s`
+            : 'DANGER LINE';
+          ctx.fillText(dangerText, BOX_RIGHT - 10, DANGER_Y - 4);
+          ctx.restore();
+
+          // 5. All Active Fruits
+          for (let i = 0; i < fruits.length; i++) {
+            const f = fruits[i];
+            drawFruitSprite(ctx, f.tier, f.x, f.y, f.r, f.angle, {
+              scale: f.scale,
+              blink: f.isBlinking,
+              surprised: f.surprisedTimer > 0,
+              shadow: true,
+            });
+          }
+
+          // 6. Merge Rings
+          for (let i = 0; i < rings.length; i++) {
+            const rg = rings[i];
+            const t = rg.life / rg.maxLife;
+            const curR = rg.r + (rg.maxR - rg.r) * (1 - Math.pow(1 - t, 2));
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(rg.x, rg.y, curR, 0, Math.PI * 2);
+            ctx.strokeStyle = rg.color;
+            ctx.globalAlpha = (1 - t) * 0.7;
+            ctx.lineWidth = 4 * (1 - t);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // 7. Particles
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            const alpha = 1 - p.life / p.maxLife;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * (0.45 + 0.55 * alpha), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+
+          // 8. Floating Score Popups
+          for (let i = 0; i < popups.length; i++) {
+            const pop = popups[i];
+            const t = pop.life / pop.maxLife;
+            const alpha = t < 0.2 ? t / 0.2 : 1 - (t - 0.2) / 0.8;
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, alpha);
+            ctx.font = `800 ${pop.big ? 21 : 16}px ui-rounded, system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'rgba(255, 252, 247, 0.92)';
+            ctx.strokeText(pop.text, pop.x, pop.y);
+            ctx.fillStyle = pop.color;
+            ctx.fillText(pop.text, pop.x, pop.y);
+            ctx.restore();
+          }
+
+          // 9. Glass Container Walls & Rim Specular Highlights (on top for true glass look)
+          ctx.save();
+          // Left inner glass highlight strip
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
+          ctx.fillRect(BOX_LEFT + 5, BOX_TOP + 6, 5, BOX_BOTTOM - BOX_TOP - 28);
+
+          // Main U-shaped glass outline
+          drawRoundedBoxPath(ctx, BOX_LEFT, BOX_TOP, BOX_WIDTH, BOX_BOTTOM - BOX_TOP, 22);
+          ctx.strokeStyle = 'rgba(138, 90, 62, 0.34)';
+          ctx.lineWidth = 3.5;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+
+          // Subtle flared glass rim highlights at top left & right
+          ctx.beginPath();
+          ctx.moveTo(BOX_LEFT - 5, BOX_TOP);
+          ctx.lineTo(BOX_LEFT + 6, BOX_TOP);
+          ctx.moveTo(BOX_RIGHT - 6, BOX_TOP);
+          ctx.lineTo(BOX_RIGHT + 5, BOX_TOP);
+          ctx.strokeStyle = 'rgba(138, 90, 62, 0.42)';
+          ctx.lineWidth = 4;
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.restore();
+        }
+
+        // ============================================================
+        // 11. Pointer, Touch & Keyboard Controls
+        // ============================================================
+        function getCanvasLogicalX(clientX) {
+          const rect = canvas.getBoundingClientRect();
+          return ((clientX - rect.left) / rect.width) * LOGICAL_W;
+        }
+
+        let activePointerId = null;
+
+        canvas.addEventListener('pointerdown', (e) => {
+          if (gameState !== 'PLAYING') return;
+          sfx.ensureContext();
+          activePointerId = e.pointerId;
+          try {
+            canvas.setPointerCapture(e.pointerId);
+          } catch (_) {}
+          targetAimX = clampAimX(getCanvasLogicalX(e.clientX), currentTier);
+          aimX = targetAimX;
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+          if (gameState !== 'PLAYING') return;
+          if (e.pointerType === 'mouse' || activePointerId === e.pointerId) {
+            targetAimX = clampAimX(getCanvasLogicalX(e.clientX), currentTier);
+          }
+        });
+
+        canvas.addEventListener('pointerup', (e) => {
+          if (gameState !== 'PLAYING') return;
+          if (activePointerId === e.pointerId) {
+            targetAimX = clampAimX(getCanvasLogicalX(e.clientX), currentTier);
+            aimX = targetAimX;
+            dropCurrentFruit();
+            activePointerId = null;
+          }
+        });
+
+        canvas.addEventListener('pointercancel', () => {
+          activePointerId = null;
+        });
+
+        window.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+            keysHeld.left = true;
+          } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+            keysHeld.right = true;
+          } else if (e.key === ' ' || e.key === 'Enter') {
+            if (gameState === 'TITLE') {
+              e.preventDefault();
+              startNewGame();
+            } else if (gameState === 'GAMEOVER') {
+              e.preventDefault();
+              startNewGame();
+            } else if (gameState === 'PLAYING') {
+              e.preventDefault();
+              dropCurrentFruit();
+            }
+          }
+        });
+
+        window.addEventListener('keyup', (e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keysHeld.left = false;
+          if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keysHeld.right = false;
+        });
+
+        window.addEventListener('blur', () => {
+          keysHeld.left = false;
+          keysHeld.right = false;
+          activePointerId = null;
+        });
+
+        // Buttons
+        startBtn.addEventListener('click', startNewGame);
+        playAgainBtn.addEventListener('click', startNewGame);
+        restartBtn.addEventListener('click', startNewGame);
+        mobileRestartBtn.addEventListener('click', startNewGame);
+
+        function handleMuteToggle() {
+          sfx.ensureContext();
+          sfx.toggleMute();
+          updateMuteUI();
+        }
+        muteBtn.addEventListener('click', handleMuteToggle);
+        mobileMuteBtn.addEventListener('click', handleMuteToggle);
+
+        window.addEventListener('resize', resizePlayfield);
+        window.addEventListener('orientationchange', () => {
+          setTimeout(resizePlayfield, 120);
+        });
+
+        // Unlock Web Audio cleanly on first user interaction (Android WebView / iOS compatibility)
+        function unlockAudioOnce() {
+          sfx.ensureContext();
+        }
+        window.addEventListener('pointerdown', unlockAudioOnce, { once: true, passive: true });
+        window.addEventListener('touchstart', unlockAudioOnce, { once: true, passive: true });
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
+
+        // ============================================================
+        // 12. Main Animation Loop (10 Physics Sub-Steps, dt <= 0.033s)
+        // ============================================================
+        let lastTime = performance.now();
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            lastTime = performance.now();
+          }
+        });
+
+        function loop(now) {
+          const rawDt = (now - lastTime) / 1000;
+          lastTime = now;
+          const clampedDt = Math.min(Math.max(rawDt, 0), MAX_FRAME_DT);
+
+          if (clampedDt > 0) {
+            update(clampedDt);
+          }
+
+          render(now / 1000);
+          requestAnimationFrame(loop);
+        }
+
+        // Boot
+        updateScoreUI();
+        updateMuteUI();
+        seedTitleShowcase();
+        resizePlayfield();
+        requestAnimationFrame(loop);
+      })();
+    </script>
+  </body>
+</html>

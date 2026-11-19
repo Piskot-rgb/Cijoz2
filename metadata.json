@@ -1,0 +1,6 @@
+{
+  "name": "Fruit Merge",
+  "description": "A cozy Suika-style 2D physics puzzle game where you drop and merge 10 tiers of kawaii fruits inside a glass container.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

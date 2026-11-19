@@ -1,0 +1,15 @@
+{
+  "appId": "com.fruitmerge.game",
+  "appName": "Fruit Merge",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "backgroundColor": "#FFF5E4",
+  "android": {
+    "backgroundColor": "#FFF5E4",
+    "allowMixedContent": false,
+    "captureInput": true
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
